@@ -62,12 +62,13 @@ code: |
   users.gather()
   set_parts(subtitle=str(users))
   users[0].address.address
-  users[0].phone_number
+  # users[0].phone_number
   set_progress(20.0)
   user_ssn
   representatives.gather()
   user_shopper_yes
-  rep_birthdate
+  second_phone_number
+  signed_by
   set_progress(40.0)
   interview_order_Request_a_food_benefit_representative = True
 ---
@@ -180,11 +181,39 @@ id: Almost there
 question: |
   Additional information needed about ${representatives[0].name.first} ${representatives[0].name.last}
 fields:
-  - "${representatives[0].name.first}'s birthdate": rep_birthdate 
-  - "${representatives[0].name.first}'s address": second_address_on_one_line
-    maxlength: 61
+ # - "${representatives[0].name.first}'s birthdate": rep_birthdate 
+ # - "${representatives[0].name.first}'s address": second_address_on_one_line
+ #   maxlength: 61
   - "${representatives[0].name.first}'s phone number": second_phone_number
     maxlength: 22
+
+---
+id: Who will be signing
+question: | 
+  Who will be signing this form?
+fields:
+  - Choose: signed_by
+    input type: dropdown
+    choices: 
+      - "${users[0].name}"
+      - "${users[0].name}'s Legal Guardian"
+  - Legal Guardian's name: signed_by
+    show if: 
+      variable: signed_by
+      is: "${users[0].name}'s Legal Guardian"
+
+# question: | 
+#  Who will be signing this form?
+# fields:
+#  - Choose: signed_by
+#    input type: dropdown
+#    choices: 
+#      - ${users[0].name}
+#      - "${users[0].name}'s Legal Guardian"
+#  - Legal Guardian's name: guardian
+#    show if: 
+#      variable: signed_by
+#      is: "${users[0].name}'s Legal Guardian"  
 
 ---
 id: preview Request_a_food_benefit_representative
@@ -351,7 +380,8 @@ attachment:
       - "user_cash_recipient": ${ representatives[0].name if user_cash_yes else ''}
       - "user_cash_yes": ${ user_cash_yes }
       - "second_signature_date": ${ today() }
-      - "second_address_on_one_line": ${ second_address_on_one_line }
-      - "second_phone_number": ${ second_phone_number }
+  #    - "second_address_on_one_line": ${ second_address_on_one_line }
+      - "Signature_name": ${signed_by} 
+      - "second_phone_number": ${ second_phone_number if user_application_yes else ' '}
       # It's a signature: test which file version this is; leave empty unless it's the final version)
       - "second_signature": ${ second_signature if i == 'final' else '' }
