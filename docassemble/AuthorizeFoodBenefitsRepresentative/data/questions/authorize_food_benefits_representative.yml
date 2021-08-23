@@ -1,13 +1,13 @@
----
-include:
+ github_user---
+ include:
   - docassemble.AssemblyLine:al_package.yml
   - docassemble.MassAccess:massaccess.yml
 ---
 metadata:
   title: |
-    Choose a SNAP or cash benefits representative
+    Name a SNAP or cash benefits representative
   short title: |
-    Choose a SNAP or cash benefits representative
+    Name a SNAP or cash benefits representative
   tags:
     - BE-00-00-00-00
 ---
@@ -23,8 +23,8 @@ code: |
     interview_metadata["Request_a_food_benefit_representative"].update({
       "al_weaver_version": "0.81",
       "generated on": "2021-04-17",
-      "title": "Choose a SNAP or cash benefits representative",
-      "short title": "Choose a SNAP or cash benefits representative",
+      "title": "Name a SNAP or cash benefits representative",
+      "short title": "Name a SNAP or cash benefits representative",
       "description": "You can use this form to grant representative access to your food stamp benefits. Choose only a family member, trusted friend, or neighbor. Only one person may be named on each form but this person may have multiple roles. The person you choose must give proof of identity. You can cancel or change this request at any time. Call 1‐800‐997‐2555.",
       "original_form": "https://www.masslegalhelp.org/income-benefits/food-stamps-advocacy-guide/appendix-c-request-to-choose-someone-to-be-my-authorized-representative.pdf",
       "allowed courts": [
@@ -67,7 +67,6 @@ code: |
   user_ssn
   representatives.gather()
   user_shopper_yes
-  second_phone_number
   signed_by
   set_progress(40.0)
   interview_order_Request_a_food_benefit_representative = True
@@ -94,25 +93,35 @@ comment: |
 id: Choose_someone_as_a_food_benefits_representative
 continue button field: Request_a_food_benefit_representative_intro
 question: |
-  Choose a SNAP or cash benefits representative
+  Name your {SNAP} or cash benefits representative
 subquestion: |
   This form can help you name an **authorized representative** to act on your behalf and help manage your SNAP account, cash benefits account, or both. Your representative does not need to have legal guardianship or a court appointment, but you do have to give your written consent, which can be done by filling out and submitting this form. 
 
   Use this form to:
-  ### Name a SNAP representative:
+  ### Name your SNAP representative
 
-  * Allow someone to sign your SNAP forms, report changes, and talk about your case with DTA 
+  * Allow someone to sign your SNAP forms, report changes, and talk about your case with {DTA} 
 
   * Allow someone to shop with your SNAP benefits, which would give your representative an EBT card that lets them shop for you
 
-  ### Name a cash benefits representative:
+  ### Name your cash benefits representative
   
   * Allow someone to talk about your cash benefits case, including reporting changes and talking about your case with DTA
 
-  * Allow someone to get money from your cash benefit account, giving them an EBT card that lets them get money from your TAFDC or EAEDC account
+  * Allow someone to get money from your cash benefit account, giving them an EBT card that lets them get money from your {TAFDC} or {EAEDC} account
 
-  It is up to you how much authority you give to your representative. *Only one person may be named on each form but this person may have multiple roles.* Choose someone you trust, and remember that the person you choose must give proof of identity. Once you submit this form, you can cancel or change this request at any time, by calling 1‐800‐997‐2555.
+  It is up to you how much authority you give to your representative. **Only one person may be named on each form but this person may have multiple roles.** Choose someone you trust, and remember that the person you choose must give proof of identity. Once you submit this form, you can cancel or change this request at any time, by calling 1‐800‐997‐2555.
 
+terms:
+  TAFDC: |
+    Transitional Aid to Families with Dependent Children
+  SNAP: |
+    Supplemental Nutrition Assistance Program, formerly known as food stamps 
+  DTA: |
+    Department of Transitional Assistance
+  EAEDC: |
+    Emergency Aid to the Elderly, Disabled and Children
+    
 ---
 id: Social Security Number SSN or Agency ID
 
@@ -175,17 +184,9 @@ fields:
     help: |
       This person will get an EBT card that lets them get money from your Transitional Aid to Families with Dependent Children (TAFDC) or Emergency Aid to the Elderly, Disabled and Children (EAEDC) account for you. You will also get an EBT card.
 
-
----
-id: Almost there
-question: |
-  Additional information needed about ${representatives[0].name.first} ${representatives[0].name.last}
-fields:
- # - "${representatives[0].name.first}'s birthdate": rep_birthdate 
- # - "${representatives[0].name.first}'s address": second_address_on_one_line
- #   maxlength: 61
   - "${representatives[0].name.first}'s phone number": second_phone_number
     maxlength: 22
+    show if: user_application_yes
 
 ---
 id: Who will be signing
@@ -201,6 +202,8 @@ fields:
     show if: 
       variable: signed_by
       is: "${users[0].name}'s Legal Guardian"
+---     
+      
 
 # question: | 
 #  Who will be signing this form?
@@ -333,15 +336,16 @@ question: |
   Your form is ready to download.
 subquestion: |
   
-  Thank you ${users}. Your form is ready to download and deliver.
+  Your form is ready to download and deliver.
 
   View, download and send your form below. Click the "Make changes" button to fix any mistakes.
   
-  **This form still needs to be signed by ${representatives[0].name.first} ${representatives[0].name.last}.** You can print it and have them sign it in-person, or you can email them this form by using the email option below. Once the form is complete, you can send it in by:
+  Once the form is complete, you can send it in by:
   
-  * mailing it to the DTA Document Processing Center, P.O. Box 4406, Taunton, MA 02780‐0420;
-  * sending it by fax to 617-887‐8765; or 
-  * submitting it in person at your local DTA office.
+  * mailing it to the DTA Document Processing Center, P.O. Box 4406, Taunton, MA 02780‐0420
+  * sending it by fax to 617-887‐8765 
+  * submitting it in person at your local DTA office
+  * uploading it to the DTA Connect App
 
   ${ action_button_html(url_action('review_" + interview_label + "'), label='Make changes', color='info') }
 
