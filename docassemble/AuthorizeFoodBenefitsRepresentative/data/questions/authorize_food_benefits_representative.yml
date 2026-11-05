@@ -26,7 +26,7 @@ code: |
       "title": "Name a SNAP or cash benefits representative",
       "short title": "Name a SNAP or cash benefits representative",
       "description": "You can use this form to grant representative access to your food stamp benefits. Choose only a family member, trusted friend, or neighbor. Only one person may be named on each form but this person may have multiple roles. The person you choose must give proof of identity. You can cancel or change this request at any time. Call 1‐800‐997‐2555.",
-      "original_form": "https://www.masslegalhelp.org/income-benefits/food-stamps-advocacy-guide/appendix-c-request-to-choose-someone-to-be-my-authorized-representative.pdf",
+      "original_form": "https://www.mass.gov/doc/request-to-choose-someone-to-be-my-authorized-representative-image-10-0/download",
       "allowed courts": [
       ],
       "categories": [
@@ -302,6 +302,7 @@ review:
       ${ second_signature }
 ---
 continue button field: users.revisit
+id: "edit users"
 question: |
   Edit users
 subquestion: |
