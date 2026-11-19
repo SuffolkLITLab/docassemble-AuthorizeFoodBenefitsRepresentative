@@ -2,6 +2,7 @@
  include:
   - docassemble.AssemblyLine:al_package.yml
   - docassemble.MassAccess:massaccess.yml
+  - docassemble.LITLabTheme:main.yml
 ---
 metadata:
   title: Name a SNAP or cash benefits representative
