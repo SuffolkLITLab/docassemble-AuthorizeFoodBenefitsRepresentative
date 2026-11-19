@@ -1,4 +1,4 @@
- # github_user---
+---
  include:
   - docassemble.AssemblyLine:al_package.yml
   - docassemble.MassAccess:massaccess.yml
@@ -11,20 +11,20 @@ metadata:
   tags:
     - BE-00-00-00-00
 ---
-mandatory: True
 comment: |
   This contains metadata that will not be overwritten if this YAML file is included in another
   file. Each file gets its own key in the interview_metadata dictionary.
   Most keys are not currently used at runtime, other than "allowed courts".
 code: |
   interview_metadata
-  if not defined("interview_metadata['Request_a_food_benefit_representative']"):
+  package_title
+  if "allowed courts" not in interview_metadata.get("Request_a_food_benefit_representative", {}):
     interview_metadata.initializeObject("Request_a_food_benefit_representative")
     interview_metadata["Request_a_food_benefit_representative"].update({
       "al_weaver_version": "0.81",
       "generated on": "2021-04-17",
-      "title": "Name a SNAP or cash benefits representative",
-      "short title": "Name a SNAP or cash benefits representative",
+      "title": package_title,
+      "short title": package_title,
       "description": "You can use this form to grant representative access to your food stamp benefits. Choose only a family member, trusted friend, or neighbor. Only one person may be named on each form but this person may have multiple roles. The person you choose must give proof of identity. You can cancel or change this request at any time. Call 1‐800‐997‐2555.",
       "original_form": "https://www.mass.gov/doc/request-to-choose-someone-to-be-my-authorized-representative-image-10-0/download",
       "allowed courts": [
@@ -36,9 +36,8 @@ code: |
       "attachment block variable": "Request_a_food_benefit_representative_attachment",
       "typical role": "plaintiff",
     })
----
-code: |
-  interview_short_title = "Choose a SNAP or cash benefits representative"
+  dta_metadata_ready = True
+
 ---
 code: |
   al_form_type = 'other'
@@ -62,12 +61,11 @@ code: |
   users.gather()
   set_parts(subtitle=str(users))
   users[0].address.address
-  # users[0].phone_number
   set_progress(20.0)
   user_ssn
   representatives.gather()
   user_shopper_yes
-  signed_by
+  dta_signer_name
   set_progress(40.0)
   interview_order_Request_a_food_benefit_representative = True
 ---
@@ -77,15 +75,39 @@ comment: |
   Delete mandatory: True to include in another interview
 mandatory: True
 code: |
+  dta_metadata_ready
   al_intro_screen
   Request_a_food_benefit_representative_intro
   interview_order_Request_a_food_benefit_representative
+  dta_current_signing_answers = (
+    dta_signer_role,
+    dta_signer_name,
+    users[0].name.full(),
+    users[0].address.on_one_line(),
+    user_ssn,
+    representatives[0].name.full(),
+    user_application_yes,
+    user_shopper_yes,
+    user_authorized_yes,
+    user_cash_yes,
+    second_phone_number if user_application_yes else "",
+  )
+  if defined("dta_signed_answers") and dta_signed_answers != dta_current_signing_answers:
+    undefine(
+      "dta_signature",
+      "signature_date",
+      "saw_signature_choice",
+      "basic_questions_signature_flow",
+      "Request_a_food_benefit_representative_preview_question",
+      "dta_signed_answers",
+    )
   signature_date
   # Save anonymized interview statistics (customize the saved data below)
   store_variables_snapshot(data={'zip': users[0].address.zip})
   Request_a_food_benefit_representative_preview_question
   basic_questions_signature_flow
-  users[0].signature
+  dta_signature
+  dta_signed_answers = dta_current_signing_answers
   Request_a_food_benefit_representative_download
 ---
 comment: |
@@ -95,22 +117,18 @@ continue button field: Request_a_food_benefit_representative_intro
 question: |
   Name your {SNAP} or cash benefits representative
 subquestion: |
-  This form can help you name an **authorized representative** to act on your behalf and help manage your SNAP account, cash benefits account, or both. Your representative does not need to have legal guardianship or a court appointment, but you do have to give your written consent, which can be done by filling out and submitting this form. 
+  Use this form to name someone you trust to help with your SNAP or cash benefits.
+  They do not need to be your legal guardian. You give them permission by signing and sending this form.
 
-  Use this form to:
-  ### Name your SNAP representative
+  You can choose which tasks this person can do for you:
 
-  * Allow someone to sign your SNAP forms, report changes, and talk about your case with {DTA} 
+  * Sign SNAP forms, tell {DTA} about changes, and talk to DTA about your SNAP case.
+  * Shop for you using your SNAP benefits.
+  * Tell DTA about changes and talk to DTA about your cash benefits case.
+  * Get money for you from your {TAFDC} or {EAEDC} account.
 
-  * Allow someone to shop with your SNAP benefits, which would give your representative an EBT card that lets them shop for you
-
-  ### Name your cash benefits representative
-  
-  * Allow someone to talk about your cash benefits case, including reporting changes and talking about your case with DTA
-
-  * Allow someone to get money from your cash benefit account, giving them an EBT card that lets them get money from your {TAFDC} or {EAEDC} account
-
-  It is up to you how much authority you give to your representative. **Only one person may be named on each form but this person may have multiple roles.** Choose someone you trust, and remember that the person you choose must give proof of identity. Once you submit this form, you can cancel or change this request at any time, by calling 1‐800‐997‐2555.
+  You can name one person per form. That person can do more than one task.
+  They must show proof of identity. To change or cancel your choice, call 1-800-997-2555.
 
 terms:
   TAFDC: |
@@ -126,21 +144,24 @@ terms:
 id: Social Security Number SSN or Agency ID
 
 question: | 
-  Help DTA identify your case
+  Which number do you have for your DTA case?
   
 
 fields:
   - "Do you know your DTA Agency ID?": agency_id
     datatype: yesnoradio
     help: |
-      This is listed on all DTA notices
-  - "Submit your DTA Agency ID": user_ssn
+      You can find this number on DTA notices.
+  - "DTA Agency ID": user_ssn
     show if: agency_id
   - "Last 4 digits of your Social Security Number (SSN)": user_ssn
     maxlength: 4
     show if: 
       variable: agency_id
       is: False
+validation code: |
+  if not agency_id and (len(user_ssn) != 4 or not user_ssn.isascii() or not user_ssn.isdecimal()):
+    validation_error("Enter exactly four digits.", field="user_ssn")
 ---
 id: Representative name
 sets:
@@ -149,7 +170,7 @@ sets:
 question:  |
   Who is your authorized representative going to be?
 subquestion: |
-  Only one person may be named on each form, but this person may have multiple roles. To request an additional representative, you will need to fill out another form.
+  You can name one person per form. They can do more than one task. To name another person, fill out another form.
 fields:
   - code: |
       representatives[0].name_fields()
@@ -165,7 +186,7 @@ fields:
   - "Act as an application representative for your **SNAP benefits**": user_application_yes
     datatype: yesno
     help: |
-      This person can sign the application and other forms, report changes, and talk about your case with the Department of Transitional Assistance (DTA). If this person gives wrong information so your household gets too many benefits, you may have to pay back what you should not have gotten.
+      This person can sign SNAP forms, tell DTA about changes, and talk to DTA about your case. If they give wrong information, you may have to pay back any extra benefits you receive.
 
   - "Shop using your **SNAP benefits**": user_shopper_yes
     datatype: yesno
@@ -175,48 +196,82 @@ fields:
   - "Act as an authorized representative for your **cash benefits** account": user_authorized_yes
     datatype: yesno
     help: |
-      This person can report changes and talk about your case with the Department of Transitional Assistance (DTA). If this person gives wrong information so your household gets too many benefits, you may have to pay back what you should not have gotten. 
- # - "Name of authorized representative": user_authorized_rep
- #   maxlength: 33
- #   show if: user_authorized_yes
+      This person can tell DTA about changes and talk to DTA about your case. If they give wrong information, you may have to pay back any extra benefits you receive.
   - "Be authorized to get money from your **cash benefits** account": user_cash_yes
     datatype: yesno
     help: |
-      This person will get an EBT card that lets them get money from your Transitional Aid to Families with Dependent Children (TAFDC) or Emergency Aid to the Elderly, Disabled and Children (EAEDC) account for you. You will also get an EBT card.
+      This person will get an EBT card. They can use it to get money from your {TAFDC} or {EAEDC} account for you. You will also get a card.
 
   - "${representatives[0].name.first}'s phone number": second_phone_number
+    datatype: al_phone
     maxlength: 22
     show if: user_application_yes
 
+validation code: |
+  if not any((user_application_yes, user_shopper_yes, user_authorized_yes, user_cash_yes)):
+    validation_error("Choose at least one task for your representative.")
+  if user_application_yes and not phone_number_is_valid(second_phone_number):
+    validation_error("Enter a valid phone number, including the area code.", field="second_phone_number")
 ---
 id: Who will be signing
-question: | 
-  Who will be signing this form?
+question: |
+  Who will sign this form?
 fields:
-  - Choose: signed_by
-    input type: dropdown
-    choices: 
-      - "${users[0].name}"
-      - "${users[0].name}'s Legal Guardian"
-  - Legal Guardian's name: signed_by
-    show if: 
-      variable: signed_by
-      is: "${users[0].name}'s Legal Guardian"
----     
-      
+  - Signer: dta_signer_role
+    datatype: radio
+    choices:
+      - ${ users[0].name.full() }: client
+      - Legal guardian: guardian
+  - Legal guardian's full name: dta_guardian_name
+    show if:
+      variable: dta_signer_role
+      is: guardian
+---
+depends on:
+  - dta_signer_role
+  - dta_guardian_name
+  - users[0].name.first
+  - users[0].name.middle
+  - users[0].name.last
+  - users[0].name.suffix
+code: |
+  dta_signer_name = dta_guardian_name if dta_signer_role == "guardian" else users[0].name.full()
+---
+code: |
+  al_form_requires_digital_signature = True
+  signature_fields = ["dta_signature"]
+---
+id: Image-10 signing method
+question: |
+  How will you sign your form?
+continue button field: saw_signature_choice
+fields:
+  - Signing method: signature_choice
+    datatype: radio
+    code: |
+      (
+        [
+          ["this_device", word("Draw your signature on this device")],
+          ["phone", word("Draw your signature on a phone")],
+        ]
+        + (
+          []
+          if al_form_requires_digital_signature
+          else [["sign_after_printing", word("Sign after printing")]]
+        )
+      )
+---
+id: sign Image-10
+question: |
+  ${ dta_signer_name }, sign the form
+subquestion: |
+  % if dta_signer_role == "guardian" and (user_application_yes or user_shopper_yes):
+  DTA asks a legal guardian signing for SNAP to send a copy of the guardianship decree with this form.
+  % endif
 
-# question: | 
-#  Who will be signing this form?
-# fields:
-#  - Choose: signed_by
-#    input type: dropdown
-#    choices: 
-#      - ${users[0].name}
-#      - "${users[0].name}'s Legal Guardian"
-#  - Legal Guardian's name: guardian
-#    show if: 
-#      variable: signed_by
-#      is: "${users[0].name}'s Legal Guardian"  
+  Draw your signature in the box below. If you prefer to sign on paper,
+  you can fill in and print [DTA’s Image-10 form](https://www.mass.gov/lists/request-to-choose-someone-to-be-my-authorized-representative).
+signature: dta_signature
 
 ---
 id: preview Request_a_food_benefit_representative
@@ -230,7 +285,7 @@ subquestion: |
   Click the image to open it in a new tab. Click the "Make changes" button
   to edit your answers.
 
-  ${ action_button_html(url_action('review_" + interview_label + "'), label='Make changes', color='info') }
+  ${ action_button_html(url_action('review_Request_a_food_benefit_representative'), label='Make changes', color='info') }
   
   Remember to come back to this window to continue and sign your form.
 continue button field: Request_a_food_benefit_representative_preview_question    
@@ -240,96 +295,33 @@ event: review_Request_a_food_benefit_representative
 question: |
   Review your answers
 review:
+  - Edit: users[0].name.first
+    button: |
+      **Benefits client**: ${ users[0].name }
+  - Edit: users[0].address.address
+    button: |
+      **Benefits client's address**: ${ users[0].address.on_one_line() }
   - Edit: user_ssn
     button: |
-      **Social Security Number (SSN) or Agency ID**:
-      ${ user_ssn }
-  - Edit: user_application_rep
+      **DTA Agency ID or last four Social Security digits**: ••••
+  - Edit: representatives[0].name.first
     button: |
-      **Name of application representative**:
-      ${ user_application_rep }
+      **Representative**: ${ representatives[0].name }
   - Edit: user_application_yes
     button: |
-      **Choose an application representative for your SNAP benefits**:
-      ${ word(yesno(user_application_yes)) }
-  - Edit: user_shopper
-    button: |
-      **Name of shopping representative**:
-      ${ user_shopper }
-  - Edit: user_shopper_yes
-    button: |
-      **Choose someone to shop using your SNAP benefits**:
-      ${ word(yesno(user_shopper_yes)) }
-  - Edit: user_authorized_rep
-    button: |
-      **Name of authorized representative**:
-      ${ user_authorized_rep }
-  - Edit: user_authorized_yes
-    button: |
-      **Choose someone to be your authorized representative?**:
-      ${ word(yesno(user_authorized_yes)) }
-  - Edit: user_cash_recipient
-    button: |
-      **Name of person chosen to get money from your cash benefit account**:
-      ${ user_cash_recipient }
-  - Edit: user_cash_yes
-    button: |
-      **Choose someone to get money from your cash benefit account**:
-      ${ word(yesno(user_cash_yes)) }
+      **Permissions**
 
-  - Edit: second_address_on_one_line
+      * Sign SNAP forms: ${ yesno(user_application_yes) }
+      * Shop with SNAP benefits: ${ yesno(user_shopper_yes) }
+      * Discuss cash benefits: ${ yesno(user_authorized_yes) }
+      * Get money from cash benefits: ${ yesno(user_cash_yes) }
+      % if user_application_yes:
+      * Representative phone number: ${ second_phone_number }
+      % endif
+  - Edit: dta_signer_role
     button: |
-      **Address of representative**:
-      ${ second_address_on_one_line }
-  - Edit: second_phone_number
-    button: |
-      **Phone number of representative**:
-      ${ second_phone_number }
-  - Edit: users.revisit
-    button: |
-      **users**
+      **Signer**: ${ dta_signer_name }
 
-      % for item in users:
-        * ${ item }
-      % endfor
-  - Edit: signature_date
-    button: |
-      **signature_date**:
-      ${ signature_date }
-  - Edit: second_signature
-    button: |
-      **second_signature**:
-      ${ second_signature }
----
-continue button field: users.revisit
-id: "edit users"
-question: |
-  Edit users
-subquestion: |
-  ${ users.table }
-
-  ${ users.add_action() }
----
-table: users.table
-rows: users
-columns:
-  - name: |
-      row_item.name.full() if defined("row_item.name.first") else ""
-  - address: |
-      row_item.address.block() if defined("row_item.address.address") else ""
-  - signature: |
-      row_item.signature if defined("row_item.signature") else ""
-  - phone_number: |
-      row_item.phone_number if defined("row_item.phone_number") else ""
-  - birthdate: |
-      row_item.birthdate if defined("row_item.birthdate") else ""
-edit:
-  - name.first
-  - address.address
-  - signature
-  - phone_number
-  - birthdate
-confirm: True
 ---
 id: download Request_a_food_benefit_representative
 event: Request_a_food_benefit_representative_download
@@ -341,14 +333,18 @@ subquestion: |
 
   View, download and send your form below. Click the "Make changes" button to fix any mistakes.
   
-  Once the form is complete, you can send it in by:
+  % if dta_signer_role == "guardian" and (user_application_yes or user_shopper_yes):
+  Include a copy of the guardianship decree when you send this form.
+  % endif
+
+  You can send the signed form in any of these ways:
   
   * mailing it to the DTA Document Processing Center, P.O. Box 4406, Taunton, MA 02780‐0420
   * sending it by fax to 617-887‐8765 
-  * submitting it in person at your local DTA office
-  * uploading it to the DTA Connect App
+  * taking it to your local DTA office
+  * uploading it in [DTA Connect](https://www.mass.gov/info-details/help-using-dta-connect)
 
-  ${ action_button_html(url_action('review_" + interview_label + "'), label='Make changes', color='info') }
+  ${ action_button_html(url_action('review_Request_a_food_benefit_representative'), label='Make changes', color='info') }
 
   ${ al_user_bundle.download_list_html() }
 
@@ -372,10 +368,10 @@ attachment:
   fields:
       - "user": ${ users[0] }
       - "user_address_on_one_line": ${ users[0].address.on_one_line() }
-      - "user_signature": ${ users[0].signature_if_final(i) }
+      - "user_signature": ${ dta_signature if i == "final" else "" }
       - "user_phone_number": ${ users[0].phone_numbers() }
       - "signature_date": ${ signature_date }
-      - "user_ssn": ${ user_ssn }
+      - "user_ssn": ${ user_ssn.strip() }
       - "user_application_rep": ${ representatives[0].name if user_application_yes else ''}
       - "user_application_yes": ${ user_application_yes }
       - "user_shopper": ${ representatives[0].name if user_shopper_yes else ''}
@@ -384,9 +380,5 @@ attachment:
       - "user_authorized_yes": ${ user_authorized_yes }
       - "user_cash_recipient": ${ representatives[0].name if user_cash_yes else ''}
       - "user_cash_yes": ${ user_cash_yes }
-      - "second_signature_date": ${ today() }
-  #    - "second_address_on_one_line": ${ second_address_on_one_line }
-      - "Signature_name": ${signed_by} 
+      - "Signature_name": ${ dta_signer_name }
       - "second_phone_number": ${ second_phone_number if user_application_yes else ' '}
-      # It's a signature: test which file version this is; leave empty unless it's the final version)
-      - "second_signature": ${ second_signature if i == 'final' else '' }
